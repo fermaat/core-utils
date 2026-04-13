@@ -1,12 +1,16 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
 [project]
-name = "package-name"
+name = "core-utils"
 version = "0.1.0"
-description = "Minimal Python package template"
+description = "Generic utilities for Python projects"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "httpx>=0.25",
-    "pyyaml>=6.0.3",
+    "loguru>=0.7",
+    "pydantic-settings>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -15,10 +19,11 @@ dev = [
     "ruff>=0.1",
     "mypy>=1.0",
     "isort>=5.12",
+    "pytest>=7.0",
 ]
 
 [tool.pdm]
-distribution = false
+distribution = true
 
 [tool.mypy]
 python_version = "3.12"
