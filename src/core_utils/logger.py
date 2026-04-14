@@ -43,7 +43,9 @@ def configure_logger(
         console:  Override whether to enable console output.
     """
     resolved_level = level or (settings.log_level if settings else "INFO")
-    resolved_console = console if console is not None else (settings.log_console if settings else True)
+    resolved_console = (
+        console if console is not None else (settings.log_console if settings else True)
+    )
 
     if log_file is None and settings is not None:
         log_file = str(settings.logs_dir / "app.log")
@@ -72,9 +74,7 @@ def configure_logger(
             sys.stderr,
             level=resolved_level,
             format=(
-                "<green>{time:HH:mm:ss}</green> | "
-                "<level>{level: <8}</level> | "
-                "{message}"
+                "<green>{time:HH:mm:ss}</green> | " "<level>{level: <8}</level> | " "{message}"
             ),
             colorize=True,
         )
