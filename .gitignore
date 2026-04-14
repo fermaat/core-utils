@@ -1,0 +1,43 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+
+# PDM
+.pdm-python
+.pdm-build/
+pdm.lock
+
+# Testing & coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Mypy
+.mypy_cache/
+
+# Ruff
+.ruff_cache/
+
+# Logs
+logs/*.log
+
+# Environment
+.env
+.env.local
+
+# Claude Code (personal overrides — never commit)
+.claude/settings.local.json
+
+# IDEs
+.idea/
+.vscode/
+*.swp

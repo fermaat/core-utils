@@ -4,7 +4,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "core-utils"
-version = "0.1.0"
+version = "1.0.0"
 description = "Generic utilities for Python projects"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -24,6 +24,9 @@ dev = [
 
 [tool.pdm]
 distribution = true
+
+[tool.pdm.scripts]
+example = {cmd = "python scripts/example_profiler.py", env = {PYTHONPATH = "src", PROFILER_ENABLED = "true"}}
 
 [tool.mypy]
 python_version = "3.12"

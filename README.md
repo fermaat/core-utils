@@ -6,7 +6,7 @@ Generic Python utilities designed to be shared across projects.
 
 ```bash
 # from GitHub
-pip install git+https://github.com/ferveloz/core-utils.git
+pip install git+https://github.com/fermaat/core-utils.git
 
 # local development (editable)
 pip install -e /path/to/core-utils
@@ -81,7 +81,100 @@ configure_logger(level="DEBUG", log_file="logs/dev.log", console=False)
 
 ### Profiler
 
-Coming soon.
+Hierarchical step profiler for instrumenting pipelines (LLM, ML, ETL, etc.).
+
+**Activation** — the profiler is completely inert unless `PROFILER_ENABLED` is set.
+No logging, no processing, zero overhead:
+
+```bash
+PROFILER_ENABLED=true python main.py   # active
+python main.py                          # NullProfiler, no-op
+```
+
+**Session context** — set once, appears in every report and JSON export:
+
+```python
+from core_utils.profiler import profiler
+
+profiler.set_context(pipeline="de_pipeline", env="production")
+```
+
+**Context manager** — for arbitrary code blocks:
+
+```python
+with profiler.step("full_run") as root:
+    root.tag(dataset="customers_v3")
+
+    with profiler.step("load_data") as s:
+        records = load()
+        s.tag(count=len(records))
+
+    with profiler.step("inference") as s:
+        s.tag(model="gpt-4o", temperature=0.7)
+
+        with profiler.step("llm_call") as llm_s:
+            response = call_llm(prompt)
+            llm_s.tag(tokens=1500)
+
+# Report is logged automatically when the root step closes:
+# [profiler | pipeline=de_pipeline  env=production]  full_run — 1.823s
+#   1. load_data                        0.082s  ✓  {'count': 120}
+#   2. inference                        1.710s  ✓  {'model': 'gpt-4o', ...}
+#     2.1. llm_call                     1.680s  ✓  {'tokens': 1500}
+```
+
+**Decorator** — for function-level steps, sync and async:
+
+```python
+@profiler.measure("embed_text")
+def embed(text: str) -> list[float]:
+    ...
+
+@profiler.measure("call_llm")
+async def call_llm(prompt: str) -> str:
+    ...
+```
+
+**Multiple runs** — executes N times, reports mean / min / max:
+
+```python
+@profiler.measure("embed_text", runs=10)
+def embed(text: str) -> list[float]:
+    ...
+# step metadata: {runs_planned: 10, runs_completed: 10, mean_s: 0.012, min_s: 0.010, max_s: 0.015}
+```
+
+**JSON export:**
+
+```python
+print(profiler.to_json())
+# {
+#   "context": {"pipeline": "de_pipeline", "env": "production"},
+#   "runs": [{"name": "full_run", "step_id": "1", "duration": 1.823, ...}]
+# }
+```
+
+**Cross-repo usage** — the `profiler` singleton is shared across all imports.
+Set context and open the root step in your entry point; instrument functions
+in any downstream repo transparently:
+
+```python
+# entry point (main repo)
+from core_utils.profiler import profiler
+
+profiler.set_context(pipeline="de_pipeline")
+with profiler.step("pipeline"):
+    actor.run()   # calls profiler.step() internally — same tree
+
+# actor repo
+from core_utils.profiler import profiler
+
+def run():
+    with profiler.step("actor_step"):
+        ...
+```
+
+See [`scripts/example_profiler.py`](scripts/example_profiler.py) for a full runnable example.
 
 ---
 
@@ -90,7 +183,7 @@ Coming soon.
 ```toml
 [project]
 dependencies = [
-    "core-utils @ git+https://github.com/ferveloz/core-utils.git",
+    "core-utils @ git+https://github.com/fermaat/core-utils.git",
 ]
 ```
 

@@ -15,6 +15,7 @@ If called without arguments, falls back to sensible defaults.
 """
 
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -49,6 +50,7 @@ def configure_logger(
     elif log_file is None:
         log_file = "logs/app.log"
 
+    Path(log_file).parent.mkdir(parents=True, exist_ok=True)
     logger.remove()
 
     logger.add(
