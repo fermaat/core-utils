@@ -1,5 +1,5 @@
 """
-Minimal profiler for work projects.
+Minimal profiler
 
 Provides a context manager and decorator that log step timing via loguru.
 No step tree, no JSON export, no session context — just named timings.
