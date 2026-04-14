@@ -3,21 +3,25 @@
 ## Purpose
 
 Generic Python utilities designed to be shared across personal and work projects.
-Currently provides: settings base class, logger configuration, and a hierarchical profiler
+Currently provides: settings base class, logger configuration, token counter, and a hierarchical profiler
 for instrumenting LLM/ML pipelines. Installable as a library via pip/pdm.
 
 ## Architecture
 
 ```
 src/core_utils/
-├── __init__.py         # Public exports: CoreSettings, configure_logger, logger, profiler, Profiler, Step
+├── __init__.py         # Public exports: CoreSettings, configure_logger, logger, TokenCounter, profiler, Profiler, Step
 ├── settings.py         # CoreSettings — pydantic-settings base class for consumer projects
 ├── logger.py           # configure_logger() — loguru setup with file + console sinks
+├── token_counter.py    # TokenCounter — word-based token estimation with per-model multipliers
 ├── profiler.py         # Full profiler: hierarchical steps, metadata, JSON export, env var guard
 └── simple_profiler.py  # Work version: flat CM + decorator only, no tree/JSON
 
 scripts/
 └── example_profiler.py # Runnable demo — simulated LLM pipeline with nested steps and benchmark
+
+tests/
+└── test_token_counter.py
 ```
 
 ## Key classes / functions
@@ -31,6 +35,13 @@ scripts/
 - `configure_logger(settings=None, *, level=None, log_file=None, console=None)`
 - Priority: explicit kwarg > settings field > default
 - Sets up loguru file sink (rotation 10MB, retention 30d) + optional console sink
+
+**`TokenCounter`** (`token_counter.py`)
+- `TokenCounter.estimate_tokens(text, model="default")` → int
+- `TokenCounter.count_messages_tokens(messages, model)` → int (includes per-message overhead)
+- `TokenCounter.will_fit_in_context(text, max_tokens, model, safety_margin)` → bool
+- `TokenCounter.truncate_to_fit(text, max_tokens, model, safety_margin)` → str
+- Model multipliers: llama/mistral/gpt=1.3, claude=1.4, neural=1.2
 
 **`Profiler`** (`profiler.py`)
 - `profiler.set_context(**kwargs)` — session-level metadata (pipeline name, env, etc.)
@@ -69,6 +80,14 @@ settings = Settings()
 configure_logger(settings)
 ```
 
+**Token counter:**
+```python
+from core_utils.token_counter import TokenCounter
+
+TokenCounter.estimate_tokens("Hello world", model="claude")   # → 3
+TokenCounter.will_fit_in_context(long_text, max_tokens=4096)  # → bool
+```
+
 **Profiler:**
 ```python
 from core_utils.profiler import profiler
@@ -79,20 +98,8 @@ with profiler.step("full_run") as root:
     root.tag(dataset="v3")
     with profiler.step("llm_call") as s:
         s.tag(model="gpt-4o")
-        result = call_llm(...)
 
 print(profiler.to_json())
-```
-
-**Work profiler:**
-```python
-from core_utils.simple_profiler import profiler
-
-with profiler.step("pipeline"):
-    ...
-
-@profiler.measure("my_function")
-def my_function(): ...
 ```
 
 **Running the example:**
@@ -117,12 +124,12 @@ pdm run example      # PROFILER_ENABLED=true already set in pdm script
 
 ## Phase status
 
-- Phase 1 ✓ — settings base, logger configuration, hierarchical profiler, simple profiler, example script
+- Phase 1 ✓ — settings base, logger configuration, token counter, hierarchical profiler, simple profiler
 - Phase 2 (pending) — `MemoryProfiler` subclass (tracemalloc per step)
 - Phase 3 (pending) — `profiler.benchmark(fn, runs, warmup)` with warmup support
 - Out of scope — thread-safety, async-safe context (contextvars), distributed tracing
 
 ## Consumers / upstream
 
-- **Used by:** any personal or work Python repo that needs shared settings/logging/profiling
+- **Used by:** `core-llm-bridge` (Settings, configure_logger, TokenCounter), any personal or work Python repo
 - **Uses:** nothing from other personal repos — intentionally standalone
