@@ -1,13 +1,21 @@
 """
-Base settings class for core-utils and consumer projects.
+Base settings schema for core-utils and consumer projects.
 
-Consumer projects should subclass CoreSettings and add their own fields:
+CoreSettings defines the fields that core-utils utilities (logger, profiler)
+expect to find. It does NOT load any files — that is the responsibility of
+the consumer application.
+
+Consumer projects subclass CoreSettings, add their own fields, and configure
+the env_file source to match their project layout:
 
     from core_utils.settings import CoreSettings
 
     class Settings(CoreSettings):
+        model_config = {
+            "env_file": [".env", ".env.local"],
+            "env_file_encoding": "utf-8",
+        }
         api_key: str = ""
-        model_name: str = "gpt-4o"
 
     settings = Settings()
 """
@@ -19,17 +27,15 @@ from pydantic_settings import BaseSettings
 
 class CoreSettings(BaseSettings):
     """
-    Base settings with fields required by core-utils utilities.
+    Base settings schema with fields required by core-utils utilities.
 
-    Loads from .env and .env.local files at the project root.
-    Consumer projects subclass this and add their own fields.
+    Reads values from environment variables only (no file loading).
+    Subclasses should add env_file to model_config if file loading is needed.
     """
 
     model_config = {
         "case_sensitive": False,
         "extra": "allow",
-        "env_file": [".env", ".env.local"],
-        "env_file_encoding": "utf-8",
     }
 
     # Environment
