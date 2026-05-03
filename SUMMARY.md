@@ -3,25 +3,27 @@
 ## Purpose
 
 Generic Python utilities designed to be shared across personal and work projects.
-Currently provides: settings base class, logger configuration, token counter, and a hierarchical profiler
-for instrumenting LLM/ML pipelines. Installable as a library via pip/pdm.
+Currently provides: settings base class, logger configuration, token counter, hierarchical profiler
+for instrumenting LLM/ML pipelines, and YAML loader with pydantic validation. Installable as a library via pip/pdm.
 
 ## Architecture
 
 ```
 src/core_utils/
-├── __init__.py         # Public exports: CoreSettings, configure_logger, logger, TokenCounter, profiler, Profiler, Step
+├── __init__.py         # Public exports: CoreSettings, configure_logger, logger, TokenCounter, profiler, Profiler, Step, load_yaml_as, load_yaml_dir_as
 ├── settings.py         # CoreSettings — pydantic-settings base class for consumer projects
 ├── logger.py           # configure_logger() — loguru setup with file + console sinks
 ├── token_counter.py    # TokenCounter — word-based token estimation with per-model multipliers
 ├── profiler.py         # Full profiler: hierarchical steps, metadata, JSON export, env var guard
-└── simple_profiler.py  # Work version: flat CM + decorator only, no tree/JSON
+├── simple_profiler.py  # Work version: flat CM + decorator only, no tree/JSON
+└── yaml_loader.py      # load_yaml_as / load_yaml_dir_as — YAML → pydantic with path:line errors
 
 scripts/
 └── example_profiler.py # Runnable demo — simulated LLM pipeline with nested steps and benchmark
 
 tests/
-└── test_token_counter.py
+├── test_token_counter.py
+└── test_yaml_loader.py
 ```
 
 ## Key classes / functions
@@ -58,6 +60,15 @@ tests/
 **`SimpleProfiler`** (`simple_profiler.py`)
 - Stripped-down version for work repos: CM + decorator, flat log output
 - No session context, no JSON, no step tree
+
+**`load_yaml_as`** (`yaml_loader.py`)
+- `load_yaml_as(path, model) -> T` — load a single YAML file and validate into a pydantic model
+- Raises `ValueError` with `path:line:col` on YAML parse errors; `path:line + field path` on validation errors
+- Line numbers resolved by walking the composed YAML node tree
+
+**`load_yaml_dir_as`** (`yaml_loader.py`)
+- `load_yaml_dir_as(dir, model, glob="*.yaml") -> list[T]` — load all matching files in a directory
+- Fail-fast: raises on the first invalid file; files processed in sorted order
 
 ## Main entry points
 
